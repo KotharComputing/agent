@@ -50,8 +50,9 @@ COPY --chown=kothar --from=build_local_libs  /usr/local/lib /usr/local/lib
 COPY --chown=kothar entrypoint.sh /bin/entrypoint
 RUN chmod +x /bin/entrypoint
 
+ARG KOTHAR_AGENT_DOCKER_IMAGE_VERSION=dev
 USER kothar
-ENV KOTHAR_AGENT_DOCKER_IMAGE_VERSION=1
+ENV KOTHAR_AGENT_DOCKER_IMAGE_VERSION=${KOTHAR_AGENT_DOCKER_IMAGE_VERSION}
 ENV HDF5_PLUGIN_PATH=/usr/local/lib
 ENV HDF5_VOL_CONNECTOR=REST
 

@@ -26,7 +26,7 @@ case "$arch" in
     ;;
 esac
 
-DL_URL="${API_BASE}/v1/agents/\$dl?arch=${arch}"
+DL_URL="${API_BASE}/v1/agents/\$dl?arch=${arch}&imageVersion=${KOTHAR_AGENT_DOCKER_IMAGE_VERSION}"
 
 download_bin() {
   local target_tmp="$BIN.tmp"
