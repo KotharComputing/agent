@@ -18,6 +18,7 @@ permissions:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ghcr.io/kotharcomputing/agent
+  IMAGE_DESCRIPTION: Kothar Agent image that can be used to execute scripts in the Workshop app - https://kotharcomputing.com.
 
 jobs:
   build-and-push:
@@ -48,6 +49,11 @@ jobs:
           tags: |
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
             type=sha
+          labels: |
+            org.opencontainers.image.description=${{ env.IMAGE_DESCRIPTION }}
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          annotations: |
+            org.opencontainers.image.description=${{ env.IMAGE_DESCRIPTION }}
 
       - name: Build and push multi-architecture image
         id: build
@@ -60,6 +66,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             KOTHAR_AGENT_DOCKER_IMAGE_VERSION=${{ steps.meta.outputs.version }}
+            OCI_IMAGE_DESCRIPTION=${{ env.IMAGE_DESCRIPTION }}
           provenance: mode=min
 
       - name: Install Cosign
@@ -69,4 +76,4 @@ jobs:
         env:
           COSIGN_YES: "true"
           COSIGN_EXPERIMENTAL: "true"
-        run: cosign sign --keyless ${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+        run: cosign sign ${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
