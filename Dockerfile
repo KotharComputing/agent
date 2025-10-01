@@ -27,7 +27,7 @@ RUN mkdir -p /tmp/hdf5 && \
 
 RUN git clone --depth 1 https://github.com/HDFGroup/vol-rest /tmp/hdf5-vol-rest && \
     cd /tmp/hdf5-vol-rest && \
-    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DHDF5_VOL_REST_ENABLE_EXAMPLES=OFF -DYAJL_USE_STATIC_LIBRARIES=ON -DCURL_USE_STATIC_LIBRARIES=ON -DCMAKE_INSTALL_PREFIX=/usr/local/lib/vol-rest -B./build && \
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DHDF5_VOL_REST_ENABLE_EXAMPLES=OFF -DYAJL_USE_STATIC_LIBRARIES=ON -DCURL_USE_STATIC_LIBRARIES=ON -DCMAKE_INSTALL_PREFIX=/usr/local -B./build && \
     cmake --build ./build --config Release && \
     cmake --install ./build
 
@@ -52,7 +52,7 @@ RUN chmod +x /bin/entrypoint
 
 USER kothar
 ENV AGENT_DOCKER_IMAGE_VERSION=1
-ENV HDF5_PLUGIN_PATH=/usr/local/lib/vol-rest
+ENV HDF5_PLUGIN_PATH=/usr/local/lib
 ENV HDF5_VOL_CONNECTOR=REST
 
 ENTRYPOINT ["/bin/entrypoint"]
