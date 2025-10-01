@@ -51,7 +51,7 @@ COPY --chown=kothar entrypoint.sh /bin/entrypoint
 RUN chmod +x /bin/entrypoint
 
 USER kothar
-ENV AGENT_DOCKER_IMAGE_VERSION=1
+ENV KOTHAR_AGENT_DOCKER_IMAGE_VERSION=1
 ENV HDF5_PLUGIN_PATH=/usr/local/lib
 ENV HDF5_VOL_CONNECTOR=REST
 
