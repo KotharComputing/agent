@@ -31,7 +31,7 @@ DL_URL="${API_BASE}/v1/agents/\$dl?arch=${arch}&imageVersion=${KOTHAR_AGENT_DOCK
 download_bin() {
   local target_tmp="$BIN.tmp"
   echo "Downloading agent..."
-  curl -fsS --retry 5 --retry-delay 2 --retry-max-time 60 "$DL_URL" -o "$target_tmp"
+  curl -fsSL --retry 5 --retry-delay 2 --retry-max-time 60 "$DL_URL" -o "$target_tmp"
   chmod +x "$target_tmp"
   mv -f "$target_tmp" "$BIN"
   echo "Installed agent"
