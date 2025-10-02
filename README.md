@@ -14,11 +14,10 @@ Please follow the instructions at https://workshop.kotharcomputing.com to run th
 
 ## Verifying signatures and provenance
 
-Consumers can validate what they pull from GHCR with Cosign:
+Consumers can validate what they pull from GHCR with [Cosign](https://docs.sigstore.dev/):
 
 ```bash
-COSIGN_EXPERIMENTAL=1 cosign verify --keyless ghcr.io/kotharcomputing/agent:latest
-COSIGN_EXPERIMENTAL=1 cosign verify-attestation --type slsa ghcr.io/kotharcomputing/agent:latest
+cosign verify ghcr.io/kotharcomputing/agent --certificate-identity-regexp=https:\/\/github.com\/KotharComputing\/agent.\* --certificate-oidc-issuer=https://token.actions.githubusercontent.com
 ```
 
 (Ensure you have [`cosign`](https://docs.sigstore.dev/system_config/installation/) installed.)
