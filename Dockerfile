@@ -61,6 +61,7 @@ ARG OCI_IMAGE_DESCRIPTION="Kothar Agent image that can be used to execute script
 LABEL org.opencontainers.image.description="${OCI_IMAGE_DESCRIPTION}"
 LABEL org.opencontainers.image.version="${KOTHAR_AGENT_DOCKER_IMAGE_VERSION}"
 LABEL org.opencontainers.image.source="https://github.com/KotharComputing/agent"
+
 USER kothar
 ENV KOTHAR_AGENT_DOCKER_IMAGE_VERSION=${KOTHAR_AGENT_DOCKER_IMAGE_VERSION}
 ENV HDF5_PLUGIN_PATH=/usr/local/lib
