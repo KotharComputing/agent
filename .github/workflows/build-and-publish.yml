@@ -65,7 +65,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            KOTHAR_AGENT_DOCKER_IMAGE_VERSION=${{ steps.meta.outputs.version }}
+            KOTHAR_AGENT_DOCKER_IMAGE_VERSION=${{ steps.meta.outputs.short-sha }}
             OCI_IMAGE_DESCRIPTION=${{ env.IMAGE_DESCRIPTION }}
           provenance: mode=min
 
