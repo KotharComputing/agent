@@ -70,8 +70,22 @@ fi
 
 # Forward TERM/INT to the child so Docker/K8s signals work properly
 child_pid=""
-term() { [[ -n "$child_pid" ]] && kill -TERM "$child_pid" 2>/dev/null || true; wait "$child_pid" 2>/dev/null || true; exit 143; }
-trap term TERM INT
+forward_signal() {
+  local sig="$1"
+  if [[ -n "$child_pid" ]]; then
+    kill "-$sig" "$child_pid" 2>/dev/null || true
+    local exit_status=0
+    if wait "$child_pid"; then
+      exit_status=0
+    else
+      exit_status=$?
+    fi
+    exit "$exit_status"
+  fi
+  exit 1
+}
+trap 'forward_signal TERM' TERM
+trap 'forward_signal INT' INT
 
 while true; do
   # Run the agent with the *original* args unchanged
