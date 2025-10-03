@@ -17,14 +17,6 @@ done
 API_BASE="${API_BASE%/}"
 
 arch=$(uname -m)
-case "$arch" in
-  x86_64|amd64)
-    arch="amd64"
-    ;;
-  arm64|aarch64)
-    arch="arm64"
-    ;;
-esac
 
 DL_URL="${API_BASE}/v1/agents/\$dl?arch=${arch}&imageVersion=${KOTHAR_AGENT_DOCKER_IMAGE_VERSION}"
 
