@@ -4,17 +4,45 @@ DEFAULT_API_BASE="https://api.kotharcomputing.com"
 BIN=/opt/agents/current
 
 API_BASE="$DEFAULT_API_BASE"
-args=("$@")
-i=0
-while [[ $i -lt ${#args[@]} ]]; do
-  if [[ "${args[$i]}" == "--kothar-api-url" && $((i+1)) -lt ${#args[@]} ]]; then
-    API_BASE="${args[$((i+1))]}"
-    ((i+=2))
-  else
-    ((i+=1))
-  fi
+TOKEN=""
+orig_args=("$@")
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --kothar-api-url)
+      if [[ $# -lt 2 ]]; then
+        echo "Missing value for --kothar-api-url" >&2
+        exit 1
+      fi
+      API_BASE="$2"
+      shift 2
+      ;;
+    --kothar-api-url=*)
+      API_BASE="${1#--kothar-api-url=}"
+      shift
+      ;;
+    --token)
+      if [[ $# -lt 2 ]]; then
+        echo "Missing value for --token" >&2
+        exit 1
+      fi
+      TOKEN="$2"
+      shift 2
+      ;;
+    --token=*)
+      TOKEN="${1#--token=}"
+      shift
+      ;;
+    *)
+      shift
+      ;;
+  esac
 done
 API_BASE="${API_BASE%/}"
+if [[ -z "$TOKEN" ]]; then
+  echo "Missing required --token argument" >&2
+  exit 1
+fi
+set -- "${orig_args[@]}"
 
 arch=$(uname -m)
 
@@ -23,7 +51,13 @@ DL_URL="${API_BASE}/v1/agents/\$dl?arch=${arch}&imageVersion=${KOTHAR_AGENT_DOCK
 download_bin() {
   local target_tmp="$BIN.tmp"
   echo "Downloading agent..."
-  curl -fsSL --retry 5 --retry-delay 2 --retry-max-time 60 "$DL_URL" -o "$target_tmp"
+  curl -fsSL \
+    --retry 5 \
+    --retry-delay 2 \
+    --retry-max-time 60 \
+    -H "Authorization: Bearer ${TOKEN}" \
+    "$DL_URL" \
+    -o "$target_tmp"
   chmod +x "$target_tmp"
   mv -f "$target_tmp" "$BIN"
   echo "Installed agent"
