@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 DEFAULT_API_BASE="https://api.kotharcomputing.com"
-BIN=/opt/agents/current
+AGENT_DIR=/opt/agents/current
+BIN="${AGENT_DIR}/agent"
 
 API_BASE="$DEFAULT_API_BASE"
 TOKEN=""
@@ -48,8 +49,40 @@ arch=$(uname -m)
 
 DL_URL="${API_BASE}/v1/agents/\$dl?arch=${arch}&imageVersion=${KOTHAR_AGENT_DOCKER_IMAGE_VERSION}"
 
+extract_agent_archive() {
+  local archive_path="$1"
+  local destination="$2"
+  unzip -q "$archive_path" -d "$destination"
+}
+
+install_agent_tree() {
+  local extracted_root="$1"
+  local staging_dir="$extracted_root"
+  mapfile -t top_entries < <(find "$extracted_root" -mindepth 1 -maxdepth 1 -print)
+  if [[ ${#top_entries[@]} -eq 1 && -d "${top_entries[0]}" ]]; then
+    staging_dir="${top_entries[0]}"
+  fi
+
+  if [[ ! -f "${staging_dir}/agent" ]]; then
+    echo "Agent archive missing expected 'agent' binary" >&2
+    return 1
+  fi
+
+  chmod +x "${staging_dir}/agent"
+  rm -rf "$AGENT_DIR"
+  mkdir -p "$(dirname "$AGENT_DIR")"
+  mv "$staging_dir" "$AGENT_DIR"
+  if [[ "$staging_dir" != "$extracted_root" ]]; then
+    rm -rf "$extracted_root"
+  fi
+  return 0
+}
+
 download_bin() {
-  local target_tmp="$BIN.tmp"
+  local archive_tmp
+  archive_tmp=$(mktemp)
+  local extract_dir
+  extract_dir=$(mktemp -d)
   echo "Downloading agent..."
   curl -fsSL \
     --retry 5 \
@@ -57,10 +90,21 @@ download_bin() {
     --retry-max-time 60 \
     -H "Authorization: Bearer ${TOKEN}" \
     "$DL_URL" \
-    -o "$target_tmp"
-  chmod +x "$target_tmp"
-  mv -f "$target_tmp" "$BIN"
-  echo "Installed agent"
+    -o "$archive_tmp"
+
+  if ! extract_agent_archive "$archive_tmp" "$extract_dir"; then
+    rm -f "$archive_tmp"
+    rm -rf "$extract_dir"
+    exit 1
+  fi
+
+  rm -f "$archive_tmp"
+  if ! install_agent_tree "$extract_dir"; then
+    rm -rf "$extract_dir"
+    exit 1
+  fi
+  rm -rf "$extract_dir"
+  echo "Installed agent."
 }
 
 # Seed once if missing
@@ -82,7 +126,7 @@ forward_signal() {
     fi
     exit "$exit_status"
   fi
-  exit 1
+  exit 0
 }
 trap 'forward_signal TERM' TERM
 trap 'forward_signal INT' INT
@@ -98,17 +142,34 @@ while true; do
   fi
 
   if [[ $rc -eq 75 ]]; then
-    # Convention: agent downloaded a new binary to $BIN.tmp and exited 75
-    if [[ -f "$BIN.tmp" ]]; then
+    agent_tmp_dir="${AGENT_DIR}.tmp"
+    agent_tmp_archive="${agent_tmp_dir}.zip"
+
+    if [[ -d "$agent_tmp_dir" ]]; then
       echo "Applying agent update…"
-      chmod +x "$BIN.tmp"
-      mv -f "$BIN.tmp" "$BIN"
-      continue
-    else
-      echo "Update requested (rc=75) but $BIN.tmp not found; attempting fresh download."
-      download_bin
-      continue
+      if install_agent_tree "$agent_tmp_dir"; then
+        continue
+      else
+        echo "Failed to install agent update from ${agent_tmp_dir}; removing and retrying download." >&2
+        rm -rf "$agent_tmp_dir"
+      fi
+    elif [[ -f "$agent_tmp_archive" ]]; then
+      echo "Applying agent update from archive…"
+      tmp_extract_dir=$(mktemp -d)
+      if extract_agent_archive "$agent_tmp_archive" "$tmp_extract_dir" && install_agent_tree "$tmp_extract_dir"; then
+        rm -f "$agent_tmp_archive"
+        rm -rf "$tmp_extract_dir"
+        continue
+      else
+        echo "Failed to install agent update from ${agent_tmp_archive}; removing and retrying download." >&2
+      fi
+      rm -f "$agent_tmp_archive"
+      rm -rf "$tmp_extract_dir"
     fi
+
+    echo "Update requested (rc=75) but no usable agent bundle found; attempting fresh download."
+    download_bin
+    continue
   fi
 
   # Any other exit code stops the container
