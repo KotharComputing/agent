@@ -38,6 +38,8 @@ RUN git clone https://github.com/HDFGroup/vol-rest /tmp/hdf5-vol-rest && \
     cmake --install ./build
 
 FROM debian:trixie-slim
+ARG COSIGN_VERSION=v2.6.1
+ARG TARGETARCH
 
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
@@ -49,6 +51,19 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 RUN update-ca-certificates
+
+RUN base_url="https://github.com/sigstore/cosign/releases/download/${COSIGN_VERSION}/cosign-linux-${TARGETARCH}" && \
+    curl -sSfL "${base_url}" -o /usr/local/bin/cosign && \
+    curl -sSfL "${base_url}-keyless.sig" -o /tmp/cosign-keyless.sig && \
+    curl -sSfL "${base_url}-keyless.pem" -o /tmp/cosign-keyless.pem && \
+    chmod +x /usr/local/bin/cosign && \
+    /usr/local/bin/cosign verify-blob \
+        --signature /tmp/cosign-keyless.sig \
+        --certificate /tmp/cosign-keyless.pem \
+        --certificate-oidc-issuer "https://accounts.google.com" \
+        --certificate-identity "keyless@projectsigstore.iam.gserviceaccount.com" \
+        /usr/local/bin/cosign && \
+    rm /tmp/cosign-keyless.sig /tmp/cosign-keyless.pem
 
 RUN useradd -m kothar
 RUN mkdir -p /opt/runtimes && chown kothar /opt/runtimes
@@ -67,5 +82,8 @@ USER kothar
 ENV KOTHAR_AGENT_DOCKER_IMAGE_VERSION=${KOTHAR_AGENT_DOCKER_IMAGE_VERSION}
 ENV HDF5_PLUGIN_PATH=/usr/local/lib
 ENV HDF5_VOL_CONNECTOR=REST
+
+# Initialize cosign for offline signature validation
+RUN cosign initialize
 
 ENTRYPOINT ["/bin/entrypoint"]
