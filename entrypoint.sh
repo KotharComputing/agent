@@ -53,6 +53,34 @@ extract_agent_archive() {
   local archive_path="$1"
   local destination="$2"
   unzip -q "$archive_path" -d "$destination"
+
+  local agent_path="${destination}/agent"
+  local bundle_path="${destination}/agent.bundle"
+  local disable_sig="${DISABLE_AGENT_SIGNATURE_VERIFICATION:-}"
+  local verify_signature=1
+
+  case "${disable_sig,,}" in
+    true|1|yes)
+      verify_signature=0
+      ;;
+  esac
+
+  if [[ ! -f "$agent_path" ]]; then
+    echo "Agent archive missing expected 'agent' binary at ${agent_path}" >&2
+    return 1
+  fi
+
+  if [[ "$verify_signature" -eq 1 ]]; then
+    if [[ ! -f "$bundle_path" ]]; then
+      echo "Agent archive missing signature bundle at ${bundle_path}" >&2
+      return 1
+    fi
+
+    cosign verify-blob "$agent_path" \
+      --bundle "$bundle_path" \
+      --certificate-identity-regexp '^https://gitlab.com/kothardev/applications/kothar-backend.*' \
+      --certificate-oidc-issuer=https://gitlab.com >/dev/null
+  fi
 }
 
 install_agent_tree() {
