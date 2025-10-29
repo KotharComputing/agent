@@ -33,7 +33,7 @@ RUN git clone https://github.com/HDFGroup/vol-rest /tmp/hdf5-vol-rest && \
     cd /tmp/hdf5-vol-rest && \
     git checkout "${HDF5_VOL_REST_COMMIT}" && \
     rm -rf .git && \
-    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DHDF5_VOL_REST_ENABLE_EXAMPLES=OFF -DYAJL_USE_STATIC_LIBRARIES=ON -DCURL_USE_STATIC_LIBRARIES=ON -DCMAKE_INSTALL_PREFIX=/usr/local -B./build && \
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DHDF5_VOL_REST_ENABLE_EXAMPLES=OFF -DYAJL_USE_STATIC_LIBRARIES=ON -DCURL_USE_STATIC_LIBRARIES=ON -DCMAKE_INSTALL_PREFIX=/usr/local/vol-rest -B./build && \
     cmake --build ./build --config Release && \
     cmake --install ./build
 
@@ -69,6 +69,7 @@ RUN useradd -m kothar
 RUN mkdir -p /opt/runtimes && chown kothar /opt/runtimes
 RUN mkdir -p /opt/agents && chown kothar /opt/agents
 COPY --chown=kothar --from=build_local_libs  /usr/local/lib /usr/local/lib
+COPY --chown=kothar --from=build_local_libs  /usr/local/vol-rest/lib /usr/local/vol-rest/lib
 COPY --chown=kothar entrypoint.sh /bin/entrypoint
 RUN chmod +x /bin/entrypoint
 
@@ -80,7 +81,7 @@ LABEL org.opencontainers.image.source="https://github.com/KotharComputing/agent"
 
 USER kothar
 ENV KOTHAR_AGENT_DOCKER_IMAGE_VERSION=${KOTHAR_AGENT_DOCKER_IMAGE_VERSION}
-ENV HDF5_PLUGIN_PATH=/usr/local/lib
+ENV HDF5_PLUGIN_PATH=/usr/local/vol-rest/lib
 ENV HDF5_VOL_CONNECTOR=REST
 
 # Initialize cosign for offline signature validation
