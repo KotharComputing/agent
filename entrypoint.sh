@@ -78,7 +78,7 @@ extract_agent_archive() {
 
     cosign verify-blob "$agent_path" \
       --bundle "$bundle_path" \
-      --certificate-identity-regexp '^https://gitlab.com/kothardev/applications/kothar-backend.*' \
+      --certificate-identity-regexp '^https://gitlab.com/kothardev/applications/kothar-(backend|platform).*' \
       --certificate-oidc-issuer=https://gitlab.com >/dev/null
   fi
 }
